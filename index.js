@@ -22,7 +22,7 @@ Promise.series = (iterable, action) => {
   );
 };
 
-const hydra = require('hydra');
+const hydra = require('gl-hydra2');
 const Utils = hydra.getUtilsHelper();
 const ServerResponse = hydra.getServerResponseHelper();
 let serverResponse = new ServerResponse();
