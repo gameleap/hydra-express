@@ -1,5 +1,5 @@
 {
-  "name": "gl-hydra-express2",
+  "name": "@gameleap/hydra-express",
   "version": "1.7.1",
   "description": "A module which wraps Hydra and ExpressJS to provide an out of the box microservice which can support API routes and handlers.",
   "author": {
@@ -20,15 +20,15 @@
   "bin": {
     "hydra-express": "index.js"
   },
-  "homepage": "https://github.com/flywheelsports/hydra-express#readme",
+  "homepage": "https://github.com/ivanvgdev/hydra-express#readme",
   "dependencies": {
+    "@gameleap/hydra": "^1.7.1",
     "bluebird": "3.5.1",
     "body-parser": "1.18.2",
     "cors": "2.8.4",
     "debug": "3.1.0",
     "express": "4.16.3",
     "helmet": "3.12.0",
-    "gl-hydra2": "^1.7.1",
     "moment": "2.21.0",
     "response-time": "2.3.2"
   },

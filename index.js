@@ -22,7 +22,7 @@ Promise.series = (iterable, action) => {
   );
 };
 
-const hydra = require('gl-hydra2');
+const hydra = require('@gameleap/hydra');
 const Utils = hydra.getUtilsHelper();
 const ServerResponse = hydra.getServerResponseHelper();
 let serverResponse = new ServerResponse();
