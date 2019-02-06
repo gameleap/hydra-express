@@ -527,7 +527,7 @@ class HydraExpress {
    */
   _registerRoutes(routes) {
     let routesList = [];
-    console.log('_registerRoutes in hydra-express called.');
+    let routesSecurityMap = {};
     Object.keys(routes).forEach((routePath) => {
       routes[routePath].stack.forEach((route) => {
         let routeInfo = route.route;
@@ -538,13 +538,17 @@ class HydraExpress {
           let routeMiddlewareSecured = routeInfo.stack.some(layer => secureMiddlewareFnNames.includes(layer.name));
          
           Object.keys(routeInfo.methods).forEach((method) => {
-            routesList.push(`[${method}][secure:${routeMiddlewareSecured}]${routePath}${routeInfo.path}`);
+            let fullRoute = `[${method}]${routePath}${routeInfo.path}`;
+            routesList.push(fullRoute);
+            routesSecurityMap[fullRoute] = routeMiddlewareSecured;
           });
         }
       });
       app.use(routePath, routes[routePath]);
     });
     hydra.registerRoutes(routesList);
+    // register router security details
+    hydra.registerRoutesSecurityMap(routesSecurityMap);
   }
 
   /**
