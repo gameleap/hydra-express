@@ -80,6 +80,7 @@ class HydraExpress {
     this.testMode = false;
     this.appLogger = defaultLogger();
     this.registeredPlugins = [];
+    this._getExpressRoutes = this._getExpressRoutes.bind(this);
   }
 
   /**
@@ -525,30 +526,62 @@ class HydraExpress {
    * @param {object} routes - object with key/value pairs of routeBase: express api object
    * @return {undefined}
    */
-  _registerRoutes(routes) {
-    let routesList = [];
-    let routesSecurityMap = {};
-    Object.keys(routes).forEach((routePath) => {
-      routes[routePath].stack.forEach((route) => {
-        let routeInfo = route.route;
-        // console.log('routeInfo from hydra-express', routeInfo);
-        // Skip router-level middleware, which will show up in the routes stack,
-        // but with an undefined route property
-        if (routeInfo) {
-          let routeMiddlewareSecured = routeInfo.stack.some(layer => secureMiddlewareFnNames.includes(layer.name));
-         
-          Object.keys(routeInfo.methods).forEach((method) => {
-            let fullRoute = `[${method}]${routePath}${routeInfo.path}`;
-            routesList.push(fullRoute);
-            routesSecurityMap[fullRoute] = routeMiddlewareSecured;
-          });
-        }
-      });
-      app.use(routePath, routes[routePath]);
+  _registerRoutes(routesMap) {
+    let allRoutesList = [];
+    let allRoutesSecurityMap = {};
+
+    Object.keys(routesMap).forEach((routePath) => {
+      const {
+        routes,
+        routesSecurityMap
+      } = this._getExpressRoutes(routePath, routesMap[routePath].stack);
+
+      allRoutesList = allRoutesList.concat(routes);
+      allRoutesSecurityMap = {
+        ...allRoutesSecurityMap,
+        ...routesSecurityMap
+      };
+
+      app.use(routePath, routesMap[routePath]);
     });
-    hydra.registerRoutes(routesList);
+
+    hydra.registerRoutes(allRoutesList);
     // register router security details
-    hydra.registerRoutesSecurityMap(routesSecurityMap);
+    hydra.registerRoutesSecurityMap(allRoutesSecurityMap);
+  }
+
+  /**
+   * Recursively collects routes from express routers.
+   * Works if a router is mounted as a child to another router.
+   * @param {string} rootPath
+   * @param {[object]} routerStack
+   * @param {array} routes
+   * @param {object} routesSecurityMap
+   */
+  _getExpressRoutes(rootPath, routerStack, routes = [], routesSecurityMap = {}) {
+    routerStack.forEach((route) => {
+      let routeInfo = route.route;
+
+      if (!routeInfo && route.handle && route.handle.stack) {
+        return this._getExpressRoutes(rootPath, route.handle.stack, routes, routesSecurityMap);
+      }
+      // Skip router-level middleware, which will show up in the routes stack,
+      // but with an undefined route property
+      if (routeInfo) {
+        let routeMiddlewareSecured = routeInfo.stack.some(layer => secureMiddlewareFnNames.includes(layer.name));
+
+        Object.keys(routeInfo.methods).forEach((method) => {
+          let fullRoute = `[${method}]${rootPath}${routeInfo.path}`;
+          routes.push(fullRoute);
+          routesSecurityMap[fullRoute] = routeMiddlewareSecured;
+        });
+      }
+    });
+
+    return {
+      routes,
+      routesSecurityMap
+    };
   }
 
   /**
