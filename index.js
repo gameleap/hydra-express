@@ -6,7 +6,7 @@
 'use strict';
 
 const debug = require('debug')('hydra-express');
-
+const listEndpoints = require('./routes-helper');
 const Promise = require('bluebird');
 Promise.config({
   // Enables all warnings except forgotten return statements.
@@ -23,17 +23,6 @@ Promise.series = (iterable, action) => {
 };
 
 const hydra = require('@gameleap/hydra');
-let secureMiddlewareFnNames = process.env.SECURE_MIDDLEWARE_FN_NAMES || ['isAuthorized', 'isAuthorizedOrInternal'];
-
-if (typeof secureMiddlewareFnNames === 'string' && secureMiddlewareFnNames.indexOf(',') > -1) {
-  secureMiddlewareFnNames = secureMiddlewareFnNames.split(',');
-  secureMiddlewareFnNames = secureMiddlewareFnNames.map(name => {
-    return name.trim();
-  });
-} else if (typeof secureMiddlewareFnNames === 'string' && secureMiddlewareFnNames.indexOf(',') === -1) {
-  console.warn('Secure middleware function names passed but malformed. Please use comma delimited values "fn1,fn2,fn3,...".');
-}
-
 const Utils = hydra.getUtilsHelper();
 const ServerResponse = hydra.getServerResponseHelper();
 let serverResponse = new ServerResponse();
@@ -559,23 +548,15 @@ class HydraExpress {
    * @param {object} routesSecurityMap
    */
   _getExpressRoutes(rootPath, routerStack, routes = [], routesSecurityMap = {}) {
-    routerStack.forEach((route) => {
-      let routeInfo = route.route;
+    const endpoints = listEndpoints({stack: routerStack});
 
-      if (!routeInfo && route.handle && route.handle.stack) {
-        return this._getExpressRoutes(rootPath, route.handle.stack, routes, routesSecurityMap);
-      }
-      // Skip router-level middleware, which will show up in the routes stack,
-      // but with an undefined route property
-      if (routeInfo) {
-        let routeMiddlewareSecured = routeInfo.stack.some(layer => secureMiddlewareFnNames.includes(layer.name));
-
-        Object.keys(routeInfo.methods).forEach((method) => {
-          let fullRoute = `[${method}]${rootPath}${routeInfo.path}`;
-          routes.push(fullRoute);
-          routesSecurityMap[fullRoute] = routeMiddlewareSecured;
-        });
-      }
+    endpoints.forEach(endpoint => {
+      endpoint.methods.forEach(method => {
+        method = method.toLowerCase();
+        let fullRoute = `[${method}]${rootPath}${endpoint.path}`;
+        routes.push(fullRoute);
+        routesSecurityMap[fullRoute] = endpoint.isSecured;
+      });
     });
 
     return {
