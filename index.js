@@ -28,7 +28,6 @@ const ServerResponse = hydra.getServerResponseHelper();
 let serverResponse = new ServerResponse();
 
 const bodyParser = require('body-parser');
-const cors = require('cors');
 const express = require('express');
 const helmet = require('helmet');
 const http = require('http');
@@ -328,7 +327,6 @@ class HydraExpress {
    * @return {undefined}
    */
   initService() {
-    app.use(cors());
     app.use(responseTime());
 
     /**
@@ -395,12 +393,6 @@ class HydraExpress {
     app.use(helmet.hsts({
       maxAge: ninetyDaysInMilliseconds
     }));
-
-    if (this.config.cors) {
-      app.use(cors(Object.assign({}, this.config.cors)));
-    } else {
-      app.use(cors());
-    }
 
     if (this.config.bodyParser) {
       let bodyParserConfig = Object.assign({

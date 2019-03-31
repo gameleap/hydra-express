@@ -25,7 +25,6 @@
     "@gameleap/hydra": "^1.7.2",
     "bluebird": "3.5.1",
     "body-parser": "1.18.2",
-    "cors": "2.8.4",
     "debug": "3.1.0",
     "express": "4.16.3",
     "helmet": "3.12.0",
